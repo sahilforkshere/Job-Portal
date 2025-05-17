@@ -6,7 +6,7 @@ const Button = () => {
   return (
     <StyledWrapper>
       <button className="button">
-        <Link to="/home" className="text">GO TO HOME</Link>
+        <Link to="/" className="text">GO TO HOME</Link>
       </button>
     </StyledWrapper>
   );

@@ -23,6 +23,11 @@ const Login = () => {
     const { email, password, role } = credentials;
 
     try {
+      if (!email || !password || !role) {
+        toast.error("Please fill in all required fields");
+        return;
+      }
+
       const { data } = await axios.post(
         "http://localhost:3000/api/v1/user/login",
         { email, password, role },
@@ -30,27 +35,22 @@ const Login = () => {
           withCredentials: true,
           headers: {
             "Content-Type": "application/json",
-          }
+          },
         }
-
       );
+
       toast.success(data.message);
-      setCredentials({
-
-        email: "",
-        password: "",
-
-        role: "",
-      });
+      setCredentials({ email: "", password: "", role: "" });
       setIsAuthorized(true);
+      setUser(data.user); // You might want to save the user too
     } catch (error) {
       toast.error(error.response?.data?.message || "Something went wrong");
     }
-
   };
 
+
   if (isAuthorized) {
-    return <Navigate to={"/home"} />
+    return <Navigate to={"/"} />
   }
 
 

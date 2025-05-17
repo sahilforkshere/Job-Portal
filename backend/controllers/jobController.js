@@ -37,12 +37,10 @@ export const createJob = catchAsync(async (req, res, next) => {
 
 
     const { title, description, category, country, city, location, fixedSalary, salaryFrom, salaryTo } = req.body;
-    // if (!title || !description || !category || !country || !city || !location || !fixedSalary || !salaryFrom || !salaryTo) {
-    //     return next(new ErrorHandler("Please fill all the fields", 400));
-    // }
-    if (salaryFrom > salaryTo) {
-        return next(new ErrorHandler("Salary From should be less than Salary To", 400));
+    if (!title || !description || !category || !country || !city || !location || !fixedSalary || !salaryFrom || !salaryTo) {
+        return next(new ErrorHandler("Please fill all the fields", 400));
     }
+   
 
     const job = await Job.create({
         title,
@@ -58,7 +56,8 @@ export const createJob = catchAsync(async (req, res, next) => {
     })
     res.status(201).json({
         success: true,
-        job
+        job,
+        message:"Job created successfully"
     })
 
 

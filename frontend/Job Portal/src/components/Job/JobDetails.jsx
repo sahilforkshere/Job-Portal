@@ -26,6 +26,27 @@ function JobDetails() {
   if (!isAuthorized) {
     navigateTo("/login")
   }
+  const handleApply = async () => {
+    try {
+      const res = await axios.get("http://localhost:3000/api/v1/application/userGetApplications", {
+        withCredentials: true
+      });
+
+      const alreadyApplied = res.data.applications.some(
+        (app) => app.employerId.user === job.postedBy && app.name === job.title
+      );
+
+      if (alreadyApplied) {
+        alert("You have already applied to this job.");
+      } else {
+        navigateTo(`/applications/${job._id}`);
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Failed to check application status. Please try again.");
+    }
+  };
+
 
   if (job.fixedSalary === "paid") {
     return (
@@ -44,7 +65,10 @@ function JobDetails() {
                 Description : <span>{job.description}</span>
               </p>
               <p>
-                Country : <span>{job.city}</span>
+                Country : <span>{job.country}</span>
+              </p>
+              <p>
+                City : <span>{job.city}</span>
               </p>
               <p>
                 Location: <span>{job.location}</span>
@@ -59,7 +83,7 @@ function JobDetails() {
 
               <p>
                 {
-                  user && user.role==='Employer'?<></>:<Link to={`/applications/${job._id}`}>Apply Now</Link>
+                  user && user.role === 'Employer' ? <></> : <Link to={`/applications/${job._id}`} onClick={handleApply}>Apply Now</Link>
                 }
               </p>
 
@@ -101,7 +125,7 @@ function JobDetails() {
               </p>
               <p>
                 {
-                  user && user.role==='Employer'?<></>:<Link to={`/applications/${job._id}`}>Apply Now</Link>
+                  user && user.role === 'Employer' ? <></> : <Link to={`/applications/${job._id}`}>Apply Now</Link>
                 }
               </p>
 

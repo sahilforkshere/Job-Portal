@@ -14,16 +14,20 @@ export const employerGetAllApplications = catchAsync(async (req, res, next) => {
         applications
     })
 })
-
 export const userGetAllApplications = catchAsync(async (req, res, next) => {
     const { _id } = req.user;
     const applications = await Application.find({ "applicantId.user": _id })
+      .populate({
+        path: "jobId",
+        select: "title category"
+      });
 
     res.status(200).json({
         status: "success",
         applications
-    })
-})
+    });
+});
+
 
 
 export const userDeleteApplication = catchAsync(async (req, res, next) => {
@@ -86,6 +90,14 @@ export const postApplication = catchAsync(async (req, res, next) => {
     if (!name || !email || !coverLetter || !phone || !applicantID.user || !employerID.user || !resume) {
         return next(new ErrorHandler("Please fill all field", 400));
     }
+    const existingApplication = await Application.findOne({
+        "applicantId.user": req.user._id,
+        "employerId.user": employerID.user,
+    });
+
+    if (existingApplication) {
+        return next(new ErrorHandler("You already applied to this role", 400));
+    }
 
 
     const newApplication = await Application.create({
@@ -93,6 +105,7 @@ export const postApplication = catchAsync(async (req, res, next) => {
         employerId: employerID,
         name,
         email,
+        jobId,
         coverLetter,
         phone,
         resume: {

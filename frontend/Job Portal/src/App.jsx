@@ -37,7 +37,7 @@ function App() {
       }
     };
     fetchUser();
-  }, [isAuthorized])
+  }, [])
 
 
 
@@ -48,14 +48,15 @@ function App() {
       <Router>
         <NavBar />
         <Routes>
-          <Route path="/" element={<Login />} />
+          <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/home" element={<Home />} />
+          <Route path="/" element={<Home />} />
           <Route path="/job/getAllJobs" element={<Jobs />} />
           <Route path="/job/postJob" element={<PostJob />} />
           <Route path="/job/:id" element={<JobDetails />} />
           <Route path="/myapplications" element={<MyApplications />} />
-          <Route path="/application/:id" element={<Application />} />
+          <Route path="/applications/:id" element={<Application />} />
+          <Route path="/job/me" element={<MyJobs/>}/>
           <Route path="*" element={<ErrorPage />} />
         </Routes>
         <Footer />

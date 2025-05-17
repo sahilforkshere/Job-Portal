@@ -10,7 +10,7 @@ function Home() {
   const { isAuthorized } = useContext(Context);
 
   if (!isAuthorized) {
-    return <Navigate to={'/'} />
+    return <Navigate to={'/login'} />
   }
   return (
     <>

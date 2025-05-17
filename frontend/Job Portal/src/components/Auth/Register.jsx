@@ -106,7 +106,7 @@ const Register = () => {
             <span>Role</span>
           </label>
           <button className="submit" onClick={handleRegister}>Submit</button>
-          <p className="signin">Already have an acount ? <Link to="/">Signin</Link> </p>
+          <p className="signin">Already have an acount ? <Link to="/login">Signin</Link> </p>
         </form>
       </StyledWrapper>
     </>

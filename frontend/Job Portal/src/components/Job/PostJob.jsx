@@ -1,10 +1,16 @@
-import React, { useContext, useState } from 'react'
-import { Context } from '../../main'
+import React, { useContext, useState, useEffect } from 'react';
+import { Context } from '../../main';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import styled from "styled-components";
+import { useNavigate } from 'react-router-dom';
 
 function PostJob() {
+  const navigate = useNavigate();
+  const [countries, setCountries] = useState([]);
+  const [cities, setCities] = useState([]);
+  const [selectedCountry, setSelectedCountry] = useState("");
+  const [isCityLoading, setIsCityLoading] = useState(false);
   const [details, setDetails] = useState({
     title: "",
     description: "",
@@ -17,10 +23,10 @@ function PostJob() {
     city: ""
   });
 
-  const {isAuthorized,user}= useContext(Context);
+  const { isAuthorized, user } = useContext(Context);
+
   const handleJobPost = async (e) => {
     e.preventDefault();
-    const { title, description, category, location, country,salaryFrom,salaryTo,fixedSalary,city } = credentials;
     try {
       const { data } = await axios.post(
         "http://localhost:3000/api/v1/job/postJob",
@@ -32,13 +38,7 @@ function PostJob() {
           },
         }
       );
-
       toast.success(data.message);
-
-      // Optionally redirect after successful post
-      navigateTo("/job/getAllJobs");
-
-      // Reset the form
       setDetails({
         title: "",
         description: "",
@@ -50,129 +50,484 @@ function PostJob() {
         fixedSalary: "",
         city: ""
       });
+      navigate("/job/getAllJobs");
     } catch (error) {
+      console.error("Job Post Error:", error);
       toast.error(error.response?.data?.message || "Something went wrong");
     }
   };
+
+  useEffect(() => {
+    const fetchCountries = async () => {
+      try {
+        const res = await axios.get("https://countriesnow.space/api/v0.1/countries");
+        setCountries(res.data.data.map(item => item.country));
+      } catch (error) {
+        toast.error("Failed to load countries");
+      }
+    };
+    fetchCountries();
+  }, []);
+
+  useEffect(() => {
+    const fetchCities = async () => {
+      if (!selectedCountry) return;
+      try {
+        setIsCityLoading(true);
+        const res = await axios.post("https://countriesnow.space/api/v0.1/countries/cities", {
+          country: selectedCountry
+        });
+        setCities(res.data.data);
+      } catch (error) {
+        toast.error("Failed to load cities");
+      } finally {
+        setIsCityLoading(false);
+      }
+    };
+    fetchCities();
+  }, [selectedCountry]);
+
   return (
-    <>
-      <StyledWrapper>
-      <div className="login-box">
-        <form>
-          <div className="user-box">
-            <input type="text" name required />
-            <label>Username</label>
+    <StyledWrapper>
+      <div className="wrapper">
+        <form className="form" onSubmit={handleJobPost}>
+          <span className="title">Post a Job</span>
+
+          <div className="form-row">
+            {/* Job Title */}
+            <div className="input-container">
+              <input className="input" type="text" placeholder="Job Title" value={details.title}
+                onChange={(e) => setDetails({ ...details, title: e.target.value })} />
+            </div>
+
+            {/* Location Type */}
+            <div className="input-container">
+              <select
+                className="input"
+                value={details.location}
+                onChange={(e) => {
+                  const loc = e.target.value;
+                  const isRemote = loc === "remote";
+                  setDetails({
+                    ...details,
+                    location: loc,
+                    country: isRemote ? "" : details.country,
+                    city: isRemote ? "" : details.city,
+                  });
+                  if (isRemote) {
+                    setSelectedCountry("");
+                    setCities([]);
+                  }
+                }}
+              >
+                <option value="" disabled>Select Location Type</option>
+                <option value="on-site">On-site</option>
+                <option value="remote">Work from Home</option>
+              </select>
+            </div>
+
+            {/* Country & City */}
+            {details.location !== "remote" && (
+              <>
+                <div className="input-container">
+                  <select
+                    className="input"
+                    value={details.country}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setSelectedCountry(value);
+                      setDetails({ ...details, country: value, city: "" });
+                    }}
+                  >
+                    <option value="">Select Country</option>
+                    {countries.map((country, idx) => (
+                      <option key={idx} value={country}>{country}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="input-container">
+                  <select
+                    className="input"
+                    value={details.city}
+                    onChange={(e) => setDetails({ ...details, city: e.target.value })}
+                    disabled={!cities.length}
+                  >
+                    <option value="">
+                      {isCityLoading ? "Loading cities..." : "Select City"}
+                    </option>
+                    {cities.map((city, idx) => (
+                      <option key={idx} value={city}>{city}</option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            )}
           </div>
-          <div className="user-box">
-            <input type="password" name required />
-            <label>Password</label>
-          </div><center>
-            <a href="#">
-              SEND
-              <span />
-            </a></center>
+
+          {/* Category */}
+          {/* Category */}
+          <div className="form-row">
+            <div className="input-container">
+              <select
+                className="input"
+                value={details.category}
+                onChange={(e) => setDetails({ ...details, category: e.target.value })}
+              >
+                <option value="">Select Category</option>
+                <option value="Graphics & Design">Graphics & Design</option>
+                <option value="Mobile App Development">Mobile App Development</option>
+                <option value="Frontend Web Development">Frontend Web Development</option>
+                <option value="MERN Stack Development">MERN STACK Development</option>
+                <option value="Account & Finance">Account & Finance</option>
+                <option value="Artificial Intelligence">Artificial Intelligence</option>
+                <option value="Video Animation">Video Animation</option>
+                <option value="MEAN Stack Development">MEAN STACK Development</option>
+                <option value="MEVN Stack Development">MEVN STACK Development</option>
+                <option value="Data Entry Operator">Data Entry Operator</option>
+                <option value="Digital Marketing">Digital Marketing</option>
+                <option value="SEO Specialist">SEO Specialist</option>
+                <option value="Content Writing">Content Writing</option>
+                <option value="Copywriting">Copywriting</option>
+                <option value="Video Animation">Video Animation</option>
+                <option value="Photography & Editing">Photography & Editing</option>
+                <option value="Finance & Accounting">Finance & Accounting</option>
+                <option value="Customer Support">Customer Support</option>
+                <option value="Human Resources">Human Resources</option>
+                <option value="Sales & Business Development">Sales & Business Development</option>
+                <option value="Project Management">Project Management</option>
+                <option value="Legal Services">Legal Services</option>
+                <option value="Education & Tutoring">Education & Tutoring</option>
+                <option value="Healthcare & Medical">Healthcare & Medical</option>
+                <option value="Engineering">Engineering</option>
+                <option value="Architecture">Architecture</option>
+  <option value="Real Estate">Real Estate</option>
+  <option value="Virtual Assistant">Virtual Assistant</option>
+  <option value="Transcription">Transcription</option>
+              </select>
+            </div>
+          </div>
+
+
+          {/* Description */}
+          <div className="input-container full-width">
+            <textarea className="input" placeholder="Job Description" rows="3" value={details.description}
+              onChange={(e) => setDetails({ ...details, description: e.target.value })} />
+          </div>
+
+          {/* Salary From & To */}
+          <div className="form-row">
+            <div className="input-container">
+              <input className="input" type="number" placeholder="Salary From" value={details.salaryFrom}
+                onChange={(e) => setDetails({ ...details, salaryFrom: e.target.value })} />
+            </div>
+
+            <div className="input-container">
+              <input className="input" type="number" placeholder="Salary To" value={details.salaryTo}
+                onChange={(e) => setDetails({ ...details, salaryTo: e.target.value })} />
+            </div>
+          </div>
+
+          {/* Fixed Salary */}
+          <div className="input-container">
+            <select className="input" value={details.fixedSalary}
+              onChange={(e) => setDetails({ ...details, fixedSalary: e.target.value })}>
+              <option value="" disabled>Select Salary Type</option>
+              <option value="paid">Paid</option>
+              <option value="unpaid">Unpaid</option>
+            </select>
+          </div>
+
+          {/* Submit */}
+          <div className="login-button">
+            <input className="input" type="submit" value="Submit Job" />
+          </div>
         </form>
       </div>
     </StyledWrapper>
-    </>
-  )
+  );
 }
 
+
+
+
 const StyledWrapper = styled.div`
-  .login-box {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 400px;
-    padding: 40px;
-    transform: translate(-50%, -50%);
-    background: rgba(24, 20, 20, 0.987);
-    box-sizing: border-box;
-    box-shadow: 0 15px 25px rgba(0,0,0,.6);
-    border-radius: 10px;
+
+ .flag-icon {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: -10px;
+
+    svg {
+      width: 24px;
+      height: 24px;
+    }
   }
 
-  .login-box .user-box {
-    position: relative;
-  }
+.input option {
+  color: black;           /* Options in dropdown */
+  background-color: white; /* Background for each option */
+}
+ 
 
-  .login-box .user-box input {
+  .wrapper {
+
+  .form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem; /* uniform spacing between inputs */
+  width: 100%;
+}
+
+.input-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem; /* Adjust the gap to your preference */
+  flex: 1;
+  min-width: 250px;
+  box-sizing: border-box;
+}
+
+
+.input-container.full-width {
+  width: 100%;
+}
+
+.input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+  .form-row {
+    flex-direction: column;
+  }
+}
+
     width: 100%;
-    padding: 10px 0;
-    font-size: 16px;
-    color: #fff;
-    margin-bottom: 30px;
-    border: none;
-    border-bottom: 1px solid #fff;
-    outline: none;
-    background: transparent;
+    height: 100%;
+    display: grid;
+    place-content: center;
+    background: black;
+    z-index: -2;
   }
 
-  .login-box .user-box label {
-    position: absolute;
-    top: 0;
-    left: 0;
-    padding: 10px 0;
-    font-size: 16px;
-    color: #fff;
-    pointer-events: none;
-    transition: .5s;
-  }
-
-  .login-box .user-box input:focus ~ label,
-  .login-box .user-box input:valid ~ label {
-    top: -20px;
-    left: 0;
-    color: #bdb8b8;
-    font-size: 12px;
-  }
-
-  .login-box form a {
+  .form {
+    padding: 2rem 3rem;
+    display: grid;
+    place-items: center;
+    gap: 3rem;
+    border: 1px solid transparent;
+    -o-border-image: linear-gradient(transparent, #ffe0a6, transparent) 1;
+    border-image: linear-gradient(transparent, #ffe0a6, transparent) 1;
+    border-width: 0 2px 0px 2px;
+    background: radial-gradient(
+        100% 61.73% at 100% 50%,
+        rgba(255, 224, 166, 0.05) 0%,
+        transparent 100%
+      ),
+      radial-gradient(
+        91.09% 56.23% at 0% 50%,
+        rgba(255, 224, 166, 0.05) 0%,
+        transparent 100%
+      );
     position: relative;
-    display: inline-block;
-    padding: 10px 20px;
-    color: #ffffff;
-    font-size: 16px;
-    text-decoration: none;
+  }
+  .form::before,
+  .form::after {
+    content: "";
+    position: absolute;
+    border: 1px solid transparent;
+    border: inherit;
+    z-index: -1;
+  }
+  .form::before {
+    inset: -1rem;
+    opacity: 15%;
+  }
+  .form::after {
+    inset: -2rem;
+    opacity: 5%;
+  }
+  .form .title {
+    color: white;
+    font-size: 2rem;
+    font-weight: 700;
+    text-align: center;
+    letter-spacing: 1rem;
     text-transform: uppercase;
-    overflow: hidden;
-    transition: .5s;
-    margin-top: 40px;
-    letter-spacing: 4px
+    background: linear-gradient(rgb(170, 170, 170), rgb(78, 78, 78));
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
   }
-
-  .login-box a:hover {
-    background: #03f40f;
-    color: #fff;
-    border-radius: 5px;
-    box-shadow: 0 0 5px #03f40f,
-                0 0 25px #03f40f,
-                0 0 50px #03f40f,
-                0 0 100px #03f40f;
+  .form .input-container {
+    display: flex;
+    align-items: center;
+    background: radial-gradient(
+      47.3% 73.08% at 50% 94.23%,
+      rgba(255, 255, 255, 0.1) 5%,
+      rgba(0, 0, 0, 0) 100%
+    );
+    border: 1px solid transparent;
+    -o-border-image: radial-gradient(
+        circle,
+        rgba(255, 255, 255, 0.445) 0%,
+        rgba(0, 0, 0, 0) 100%
+      )
+      1;
+    border-image: radial-gradient(
+        circle,
+        rgba(255, 255, 255, 0.445) 0%,
+        rgba(0, 0, 0, 0) 100%
+      )
+      1;
+    border-width: 0 0 1px 0;
   }
-
-  .login-box a span {
-    position: absolute;
-    display: block;
+  .form .input-container svg {
+    stroke: grey;
   }
-
-  @keyframes btn-anim1 {
-    0% {
-      left: -100%;
-    }
-
-    50%,100% {
-      left: 100%;
-    }
+  .form .input-container svg g {
+    transition: all 0.2s ease-in-out;
   }
-
-  .login-box a span:nth-child(1) {
-    bottom: 2px;
-    left: -100%;
+  .form .input-container .input {
+    background: none;
+    border: none;
+    padding: 0.5rem 1rem;
+    color: white;
+  }
+  .form .input-container .input:focus {
+    outline: none;
+    color: #ffe0a6;
+  }
+  .form .input-container:focus-within {
+    background: radial-gradient(
+      47.3% 73.08% at 50% 94.23%,
+      rgba(255, 224, 166, 0.1) 5%,
+      rgba(0, 0, 0, 0) 100%
+    );
+    -o-border-image: radial-gradient(circle, #ffe0a6 0%, transparent 100%) 1;
+    border-image: radial-gradient(circle, #ffe0a6 0%, transparent 100%) 1;
+  }
+  .form .input-container:focus-within svg g {
+    stroke: #ffe0a6;
+  }
+  .form .login-button {
     width: 100%;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, #03f40f);
-    animation: btn-anim1 2s linear infinite;
-  }`;
+    position: relative;
+    transition: all 0.2s ease-in-out;
+  }
+  .form .login-button .input {
+    cursor: pointer;
+    padding: 1rem;
+    width: 100%;
+    background: radial-gradient(
+        100% 45% at 100% 50%,
+        rgba(255, 224, 166, 0.084) 0%,
+        rgba(115, 115, 115, 0) 100%
+      ),
+      radial-gradient(
+        100% 45% at 0% 50%,
+        rgba(255, 224, 166, 0.084) 0%,
+        rgba(115, 115, 115, 0) 100%
+      );
+    border: 1px solid transparent;
+    -o-border-image: linear-gradient(transparent, #ffe0a6, transparent) 1;
+    border-image: linear-gradient(transparent, #ffe0a6, transparent) 1;
+    border-width: 0 1px 0 1px;
+    text-align: center;
+    color: #ffe0a6;
+    font-size: 1rem;
+  }
+  .form .login-button::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.3764705882) 0.5px,
+      transparent 0.5px
+    );
+    background-size: 0.1px 3px;
+    mix-blend-mode: soft-light;
+    -webkit-mask-image: radial-gradient(
+        40% 45% at 100% 50%,
+        white 0%,
+        transparent 100%
+      ),
+      radial-gradient(40% 45% at 0% 50%, white 0%, transparent 100%);
+    mask-image: radial-gradient(40% 45% at 100% 50%, white 0%, transparent 100%),
+      radial-gradient(40% 45% at 0% 50%, white 0%, transparent 100%);
+  }
+  .form .login-button:hover {
+    animation: flicker 0.5s infinite;
+    width: 105%;
+  }
+  .form .login-button:active {
+    width: 95%;
+  }
+  .form .texture {
+    position: absolute;
+    background-image: linear-gradient(0deg, #ffffff 1px, transparent 1px);
+    background-size: 1px 5px;
+    inset: 0;
+    mix-blend-mode: soft-light;
+    -webkit-mask-image: radial-gradient(
+        30% 45% at 100% 50%,
+        white 0%,
+        transparent 100%
+      ),
+      radial-gradient(30% 45% at 0% 50%, white 0%, transparent 100%);
+    mask-image: radial-gradient(30% 45% at 100% 50%, white 0%, transparent 100%),
+      radial-gradient(30% 45% at 0% 50%, white 0%, transparent 100%);
+    pointer-events: none;
+    animation: movingLines 1s linear infinite;
+  }
+
+  @keyframes flicker {
+    0% {
+      filter: brightness(100%);
+    }
+    10% {
+      filter: brightness(80%);
+    }
+    20% {
+      filter: brightness(120%);
+    }
+    30% {
+      filter: brightness(90%);
+    }
+    40% {
+      filter: brightness(110%);
+    }
+    50% {
+      filter: brightness(100%);
+    }
+    60% {
+      filter: brightness(85%);
+    }
+    70% {
+      filter: brightness(95%);
+    }
+    80% {
+      filter: brightness(105%);
+    }
+    90% {
+      filter: brightness(115%);
+    }
+    100% {
+      filter: brightness(100%);
+    }
+  }
+  @keyframes movingLines {
+    0% {
+      background-position: 0 0;
+    }
+    100% {
+      background-position: 0 5px;
+    }
+  } /*# sourceMappingURL=style.css.map */`;
 
 export default PostJob

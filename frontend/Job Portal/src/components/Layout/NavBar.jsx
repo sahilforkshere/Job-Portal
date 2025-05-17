@@ -20,7 +20,7 @@ const Navbar = () => {
       });
       toast.success(response.data.message);
       setIsAuthorized(false);
-      navigateTo("/");
+      navigateTo("/login");
     } catch (error) {
       toast.error(error.response?.data?.message || "Logout failed");
       setIsAuthorized(true);

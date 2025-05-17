@@ -25,9 +25,17 @@ const applicationSchema = new mongoose.Schema({
     },
 
     phone: {
-        type: Number,
-        required: [true, 'Please provide your phone number']
-    },
+        type: String,
+        required: [true, 'Please provide your phone number'],
+        validate: {
+          validator: function (v) {
+            // Optional: basic international number pattern validation
+            return /^\+\d{1,4}\s?\d{6,15}$/.test(v);
+          },
+          message: props => `${props.value} is not a valid phone number!`
+        }
+      },
+      
     resume: {
         public_id: {
             type: String,
@@ -61,7 +69,14 @@ const applicationSchema = new mongoose.Schema({
             required: true,
             enum: ['Employer']
         }
-    }
+    },
+    jobId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Job",
+        required: true
+      }
+      
+      
 })
 
 
